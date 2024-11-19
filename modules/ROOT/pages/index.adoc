@@ -1,6 +1,61 @@
-= An Example Quick Course
+= Deploying MicroShift on Red Hat Device Edge
 :navtitle: Home
 
-== Introduction
+== Objective
 
-This is an example quick course demonstrating the usage of Antora for authoring and publishing quick courses.
+This course teaches how to deploy and configure MicroShift on Red Hat Device Edge targets, using either traditional RHEL or RHEL for Edge, to support Kubernetes applications.
+
+It is part of a Red Hat Device Learning path, which currently includes two courses:
+
+* https://redhatquickcourses.github.io/rhde-build/[Building Red Hat Device Edge Images] (prerequisite course)
+* *Deploying MicroShift on Red Hat Device Edge Quick Course* (this course)
+
+== Audience
+
+Operations-focused customer roles, who design and implement device edge images, but are not usually in-person at edge sites:
+
+* System Administrations (IT - Information Technology, and OT - Operations Technology)
+* Site Reliability Engineers (SREs)
+* Platform Engineers
+* DevOps Engineers
+
+Red Hat and Partner roles that perform demonstrations, PoC ad PoV of Red Hat Device Edge as part of a sales motion, such as Solutions Architects
+
+Red Hat and Partner roles that support Red Hat Device Edge on customers, such as Services Consultants and Customer Support Engineers.
+
+== Prerequisites
+
+* Attend https://redhatquickcourses.github.io/rhde-build/[RHDE-1: Building Red Hat Device Edge Images] or having equivalent experience with RHEL for Edge.
+* Familiarity with RHEL system administration, to the level of RHCA (Red Hat Certified System Administrator) or equivalent knowledge.
+* Familiarity with OpenShift administration, to the level of Red Hat Certified OpenShift Administrator or equivalent knowledge.
+* Familiarity with Ansible playbooks and Ansible Automation Platform is useful but not required.
+* Familiarity with web server administration, such as Apache Web Server or NGinx, is useful but not required.
+* Familiarity with database server administration, such as MySQL or MariaDB, is useful but not required.
+
+== Clasroom Environment
+
+The virtual classroom environment is a work in progress and its not yet available to leaners.
+
+If you can provision your own RHEL servers or VMs, it should be possible to configure all that is required for the hands-on activities by using a https://developers.redhat.com/products/rhel/download[free subscriptoion] from the https://developers.redhat.com/about[Red Hat Developer Program], which gives access to RHEL installation media, RHEL package repositories, OpenShift package repositories, and OpenShift container images in Red Hat registries.
+
+== Other Sources of Information About MicroShift
+
+The main source is the https://docs.redhat.com/en/documentation/red_hat_build_of_microshift/4.17[product documentation for MicroShift] in Red Hat's documentation portal.
+
+We also recommend that you use the product documentation for https://docs.redhat.com/en/documentation/openshift_container_platform/4.17[Red Hat OpenShift Container Platform] for general Kubernetes topics, OpenShift extension APIs, and add-on operators which are supported in MicroShift.
+
+The Red Hat Build of MicroShift is supported as part of Red Hat Device Edge, check its https://docs.redhat.com/en/documentation/red_hat_device_edge/4/html/overview/index[overview document] for pointers to MicroShift, RHEL for Edge, and other components of Red Hat Device Edge, in particular the documentation about https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/composing_installing_and_managing_rhel_for_edge_images/index[Composing, installing, and managing RHEL for Edge images].
+
+It is not expected that you need to use the https://microshift.io/[open source upstream] of MicroShift and its community documentation for day to day use of the Red Hat Build of MicroShift.
+
+== Author
+
+*Fernando Lozano* +
+Training Content Architect +
+Red Hat - Product Portfolio Marketing & Learning
+
+Special thanks to Gregory Giguashvili and Vladislav Walek for for all their support while writing this course and testing its hands-on activities.
+
+Many thanks to Daniel Froehlich for his support reviewing the course design, its outline, work-in-progress contents, and answering my newbie questions.
+
+//Many thanks to Daniel Froehlich, Eric Lavarde, Jeff Ligon, Lester Claudio, Luis Arizmendi, Mourad Nakib, Sayan Paul, and Shauna Diaz for their support reviewing the course design, its outline, work-in-progress contents, and answering my newbie questions.

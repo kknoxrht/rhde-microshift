@@ -1,0 +1,14 @@
+= Deploy MicroShift on Edge Devices
+
+Goal::
+Add MicroShift to RHEL for Edge Images
+
+WARNING: Work In Progress
+
+== Introduction
+
+This chapter explores the requirements for building edge system images which include MicroShift, as supported by the Red Hat Build of MicroShift product, including the caveats applicable to air-gapped environments.
+
+The hands-on activities build edge commit and edge installer images with configure MicroShift and test them using RHEL VMs.
+
+IMPORTANT: Most details about installing and configuring MicroShift are explained by the xref:ch2-package[previous chapter]. While you could perform all hands-on activities here without doing the previous chapter, you may lack essential concepts and troubleshooting guidance.
