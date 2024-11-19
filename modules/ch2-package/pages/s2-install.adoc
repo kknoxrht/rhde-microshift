@@ -1,0 +1,110 @@
+:time_estimate: 5
+
+= Lab: Install MicroShift from RPM Packages
+
+_Estimated reading time: *{time_estimate} minutes*._
+
+Objective::
+
+Install MicroShift in a RHEL VM.
+
+WARNING: Work In Progress
+
+== Before you Begin
+
+You need a _test machine_ with RHEL and unrestricted `sudo`, where you will install MicroShift.
+
+You also need a _package server machine_ already configured to serve DNF repositories for the RHEL BaseOS, RHEL AppStream, RHEL Fast Data Path, and Red Hat OpenShift Container Platform. Make sure that your _package server machine_ machine was configured and verified by following the instructions from the xref:ch1-microshift:s3-prepare-lab.adoc[first lab].
+
+These instructions were tested on RHEL 9.4 [tentative!] but should work with minimal or no change on newer and older RHEL 9.x releases.
+
+If you are using the course classroom, you will log in on the `workstation` VM as the user `student` with password `student`, and you start SSH sessions from `workstation` VM to the `serverb` VM, which is your _test machine_, using the same user. If not, please adapt the instructions to your test environment.
+
+You will perform most steps in this lab on your _test machine_.
+
+== Instructions
+
+1. Log in on your _test machine_ and verify that you have the prerequisites from previous labs.
+
+.. Check that the required package repositories from RHEL and OpenShift are available. If you are connected to the Internet and registed your _test machine_ with a valid Red Hat subscription, you would see something similar to:
++
+[source,subs="verbatim,quotes"]
+--
+$ *sudo dnf repolist*
+Updating Subscription Management repositories.
+repo id                                                         repo name
+fast-datapath-for-rhel-9-x86_64-rpms                            Fast Datapath for RHEL 9 x86_64 (RPMs)
+rhel-9-for-x86_64-appstream-rpms                                Red Hat Enterprise Linux 9 for x86_64 - AppStream (RPMs)
+rhel-9-for-x86_64-baseos-rpms                                   Red Hat Enterprise Linux 9 for x86_64 - BaseOS (RPMs)
+rhocp-4.17-for-rhel-9-x86_64-rpms                               Red Hat OpenShift Container Platform 4.17 for RHEL 9 x86_64 (RPMs)
+--
++
+IMPORTANT: Please, do _not_ register any VM on your virtual labs. Please conserve the limited Internet bandwidth which is shared by all learners using ROLE.
+
+..  On the classroom environment, you will find configuration files which point to the _package server machine_ and the names of its DNF repositories match the names of Red Hat DNF repositories.
++
+[source,subs="verbatim,quotes"]
+--
+$ *ls /etc/yum.repos.d*
+[GRAB OUTPUT]
+$ *cat /etc/yum.repos.d/ocp4.repo*
+include::1@samples:yum:example$ocp4.repo[]
+--
+
+.. As an additional sanity check, search from packages from the OpenShift and RHEL Fast Data Path repositories.
++
+[source,subs="verbatim,quotes"]
+--
+$ *dnf search microshift*
+[GRAB OUTPUT]
+$ *dnf search ovn24.09-central*
+[GRAB OUTPUT]
+--
+
+2. Get a pull secret with access to the MicroShift container images
+
+.. In a system connected to the internet, you would get the pull secret from your Red Hat account from the Red Hat Hybrid Cloud Console.
++
+IMPORTANT: Please, do _not_ use your pull secret with VMs on your virtual labs. Please stick to the scenario of an air-gapped deployment of MicroShift, where your IT Operations already configured all local network infrastructure required for deploying Red Hat Device Edge.
+
+.. On the classroom environment, there is a pre-generated pull secret with provides access to your mirror registry.
++
+[source,subs="verbatim,quotes"]
+--
+$ *cat [FILE NAME TBD]*
+include::1@samples:yum:example$ocp4.repo[]
+--
+
+.. As a sanity check, use the pull secret to inspect container images on the mirror registry.
++
+[ NEED AN IMAGE FROM REDHAT REGISTRIES THAT IS MIRROED IN CLASSROOM, WITH AN EASY NAME... LIKE ONE I WOULD USE FOR AN SMOKE TEST]
++
+[ UBI IMAGES HAVE DIFFERENT NAMES IN RED HAT AND DOCKER HUB :-(]
++
+[source,subs="verbatim,quotes"]
+--
+$ * skopeo --authfile inspect docker://registry.lab.example.com/ubi9/ubi | head -n 5*
+[GRAB OUTPUT]
+--
++
+NOTE: The command above should work with your actual Red Hat pull secret if you change the hostname to `redhat.registry.io`
+
+3. Install the MicroShift packages.
+
+.. You need only one package called `microshift` but pay attention to its dependency list. You will see packages that provide CRI-O and other components of OpenShift, and also packages from Open Virtual Networking (OVN).
++
+NOTE: If your system prompts about importing GPG keys, answer "Y".
++
+[source,subs="verbatim,quotes"]
+--
+$ sudo dnf install microshift
+[GRAB PACKAGE LIST]
+--
+
+4. Configure MicroShift
+
+5. Start and Enable MicroShift
+
+== Next Steps
+
+Lorem ipsum
