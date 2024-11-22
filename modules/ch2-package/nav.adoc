@@ -1,2 +1,2 @@
 * xref:index.adoc[]
-** xref:s2-install.adoc[]
+** xref:s2-install-lab.adoc[]

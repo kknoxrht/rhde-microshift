@@ -72,7 +72,7 @@ ovn24.09-central.x86_64 : Open Virtual Network support
 
 2. Verify that your _test machine_ can access a mirror container image registry that is pre-populared with the container images required by MicroShift.
 
-.. Install the container tools packages, if they are not already installed on your _test machine_. They are _not_ strictly required to run MicroShift, but they do provide some troubleshooting tools which can be valuable in a development environment.
+.. Install the `container-tools` package, if it is not already installed on your _test machine_. This is _not_ strictly required to run MicroShift, but it provides troubleshooting tools which can be valuable in a development environment.
 +
 NOTE: If your _test machine_ prompts about importing GPG keys, answer "y".
 +
@@ -99,7 +99,7 @@ $ *cat mirror-pull-secret*
 include::1@samples:microshift:example$mirror-pull-secret[]
 --
 +
-Encoded in the `auth` field of that pull secret are the `microshift` username and `redhat123` password.
+Encoded in the `auth` field of that pull secret are the `microshift` username and the `redhat123` password.
 
 .. Add the CA key of the mirror registry to the set of trusted CAs. The public CA key is availabe from the _web server machine_, which in the classroom environment is `servera`, in the `http://servera.lab.example.com/quay-rootCA.pem` URL.
 +
@@ -109,7 +109,7 @@ $ *sudo cp quay-rootCA.pem /etc/pki/ca-trust/source/anchors*
 $ *sudo update-ca-trust*
 --
 
-.. As a sanity check, use the pull secret to inspect container images on the mirror registry. It should worth with TLS validation enabled, which is the default for all container tools.
+.. As a sanity check, use the pull secret to inspect container images on the mirror registry. It should work with TLS validation enabled, which is the default for all container tools.
 +
 [source,subs="verbatim,quotes"]
 --
@@ -117,7 +117,7 @@ $ *skopeo inspect --authfile mirror-pull-secret -f '{{.RepoTags}}' docker://regi
 [latest]
 --
 +
-NOTE: The command above should work with your actual Red Hat pull secret if you change the registry part of the contaimer image name to `redhat.registry.io`, but displaying a long list of tags.
+NOTE: The command above would work with your actual Red Hat pull secret if you change the registry part of the contaimer image name to `redhat.registry.io`, but displaying a long list of tags.
 
 4. Verify that your _test machine_ is configured to support the installation of MicroShift.
 
@@ -147,9 +147,9 @@ public (active)
   rich rules:
 --
 +
-Enable more services and trusted zones or interfaces as you need. Later in this course we'll show wthat to add to enable remote access to MicroShift and Kubernetes applications on it.
+Enable more services and trusted zones or interfaces as you need. Later in this course we'll show what to add to enable remote access to MicroShift and Kubernetes applications on it.
 
-.. Check that you have two CPU cores and at least 2GB of memory. If you are using the classroom environment, you have more memory than required on the `serverb` VM.
+.. Check that you have two CPU cores, or two virtual CPUs, and at least 2GB of memory. If you are using the classroom environment, you have more memory than required on the `serverb` VM.
 +
 [source,subs="verbatim,quotes"]
 --
@@ -172,7 +172,7 @@ Filesystem             Size  Used Avail Use% Mounted on
 /dev/mapper/rhel-root   10G  7.1G  2.9G  71% /
 --
 
-.. Finally, check that you have a volume group named `rhel` with a few GB of unallocated space, so you can create Persistent Volumes (PVs) for your Kubernetes applications.
+.. Check that you have a volume group named `rhel` with a few GB of unallocated space, so you can create Persistent Volumes (PVs) for your Kubernetes applications.
 +
 [source,subs="verbatim,quotes"]
 --
@@ -181,9 +181,23 @@ $ *sudo vgs*
   rhel   1   1   0 wz--n- <19.02g <9.02g
 --
 
+.. Check that your _test machine_ is not using the network ranges used by the https://github.com/openshift/microshift/blob/main/docs/user/howto_firewall.md[Kubernetes virtual networks] nor the OpenShift ingress IP address, which are 10.42.0.0/16 to 10.44.0.0/16 and 169.254.169.1.
++
+[source,subs="verbatim,quotes"]
+--
+$ *ip br addr show*
+lo               UNKNOWN        127.0.0.1/8 ::1/128 
+enp1s0           UP             172.25.250.12/24 fe80::5054:ff:fe20:5959/64
+$ *route -n*
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         172.25.250.254  0.0.0.0         UG    100    0        0 eth0
+172.25.250.0    0.0.0.0         255.255.255.0   U     100    0        0 eth0
+--
+
 5. Install the MicroShift packages.
 +
-You need only one package, called `microshift`, but pay attention to its dependency list. You will see packages from OpenShift, such as `crio`; packages from RHEL for Edge, like `greenboot`; and also packages from Fast Data Path for RHEl 9, which provide Open Virtual Networking (OVN).
+You need only one package, called `microshift`, but pay attention to its dependency list. You will see packages from OpenShift, such as `crio`; packages from RHEL for Edge, like `greenboot`; and also packages from Fast Data Path for RHEL 9, which provide Open Virtual Networking (OVN).
 +
 [source,subs="verbatim,quotes"]
 --
@@ -222,6 +236,15 @@ WARNING: Do not try to start MicroShift yet!
 
 6. Configure MicroShift to use your mirror registry.
 
+
+.. Check the presence of the MicroShift configuration directory. You do _not_ need to make any changes, and the files there just inform about their default configuration values.
++
+[source,subs="verbatim,quotes"]
+--
+$ ls */etc/microshift*
+config.yaml.default  lvmd.yaml.default  manifests  manifests.d  ovn.yaml.default
+--
+
 .. Copy the pull secret to the CRI-O configuration directory, so MicroShift uses it for pulling container images for any pod, in any namespace.
 +
 [source,subs="verbatim,quotes"]
@@ -254,17 +277,29 @@ $ *sudo cp 999-microshift-mirror.conf /etc/containers/registries.conf.d/999-micr
 $ *cat containers-policy.json.nosigs*
 include::1@samples:microshift:example$containers-policy.json.nosigs[]
 --
-+
-WARNING: If you skip that step, some Red Hat add-on operator images will fail to run from the mirror registry.
-
 .. Copy the image policy to the container tools registries configuration directory.
 +
 [source,subs="verbatim,quotes"]
 --
 $ *sudo cp containers-policy.json.nosigs /etc/containers/policy.json*
 --
++
+WARNING: If you skip that step, some Red Hat add-on operator images will fail to pull from the mirror registry.
 
-7. Enable and Start MicroShift.
+7. Configure the system firewall and start MicroShift.
+
+.. Allow network traffic on the Kubernetes virtual network
++
+NOTE: This is _not_ yet allowing network traffic from outside of your _test machine_ to MicroShift and its applications. It is only allowing network traffic between Kubernetes pods and between the _test machine_ and MicroShift.
++
+[source,subs="verbatim,quotes"]
+--
+$ *sudo firewall-cmd --permanent --zone=trusted --add-source=10.42.0.0/16*
+success
+$ *sudo firewall-cmd --permanent --zone=trusted --add-source=169.254.169.1*
+success
+$ *sudo firewall-cmd --reload*
+--
 
 .. Be patient, it will take a few moments for MicroShift to generate Kubernetes configuration files, pull all its containers, and starts it daemons and pods. Be warned that it will _not_ be ready yet when the `systemctl start` command returns.
 +
@@ -289,7 +324,7 @@ $ *sudo systemctl status microshift*
 
 8. Verify that MicroShift is fully initialized.
 
-.. Copy the autogenerated Kubeconfig file to your home directory and change its ownership so you can read it from your unprivileged user. Do not make that file read-write, let it stay unchanged as a "breaking class" resort.
+.. Copy the autogenerated kubeconfig file to your home directory and change its ownership so you can read it from your unprivileged user. Do not make that file read-write, let it stay unchanged as a "breaking class" resort.
 +
 [source,subs="verbatim,quotes"]
 --
@@ -297,9 +332,7 @@ $ *sudo cp /var/lib/microshift/resources/kubeadmin/kubeconfig ~/local-admin*
 $ *sudo chown student:student ~/local-admin*
 --
 
-.. Check all pods running on MicroShift. It may take a while, so repeat the following command until all pods are ready and running.
-+
-WARNING: Some pods may enter a error state for a while, and recover by themselves after a few minutes. Do not panic if you see a status of `CrashLoopBackOff` or `Error`. 
+.. Check that all pods running on MicroShift are running and all their containers are ready. It may take a while, so repeat the following command until all pods are fully ready and running.
 +
 [source,subs="verbatim,quotes"]
 --
@@ -319,8 +352,6 @@ openshift-storage      	vg-manager-tjrs2                       	1/1 	Running   0
 
 .. As an additional sanity check, verify that your Kubernetes cluster contains one node which takes the roles of both control plane and worker node.
 +
-[ PODS ARE NOT RECOVERING :-( but node reports ready ]
-+
 [source,subs="verbatim,quotes"]
 --
 $ *oc --kubeconfig ~/local-admin get node*
@@ -328,9 +359,53 @@ NAME 	STATUS   ROLES                     	AGE 	VERSION
 rhelvm   Ready	control-plane,master,worker   7m31s   v1.30.5
 --
 
-With this last step, you have a fully functional deployment of MicroShift in a RHEL machine. If you find that any of the MicroShift pods failed to start, the most likely cause is an error in your registry mirror and image policy configurations.
+.. Check the presence of the virtual network bridges and interfaces used by Kubernetes virtual networks.
++
+[source,subs="verbatim,quotes"]
+--
+lo               UNKNOWN        127.0.0.1/8 ::1/128 
+enp1s0           UP             172.25.250.12/24 fe80::5054:ff:fe7a:4548/64 
+ovs-system       DOWN           
+br-ex            UNKNOWN        10.44.0.0/32 169.254.169.2/29 
+ovn-k8s-mp0      UNKNOWN        10.42.0.2/24 fe80::f82e:7aff:fe45:9ef/64 
+br-int           UNKNOWN        
+0bf5acf4f0b11ca@if2 UP             fe80::867:8ff:fe81:7bc9/64 
+7faf584a140566a@if2 UP             fe80::483d:adff:fe6e:1504/64 
+...
+--
++
+The output will be longer as you create more pods, because each one gets a virtual network interface. Notice the two kernel bridges, named `br-ex` and `br-int`, and the OVN switch, named `ovn-k8s-mp0`.
 
-IMPORTANT: The way we configured MicroShift, it does _not_ contain a pull secret to download container images from Red Hat, even if it has access to the Internet. It can only pull containers from its mirror registry, which is usually what organizations with stricty security policies demand.
+.. Check the presence of the routing rules which enable communication between your real networks and Kubernetes virtual networks.
++
+[source,subs="verbatim,quotes"]
+--
+[student@rhelvm4 ~]$ sudo route -n
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         172.25.250.254  0.0.0.0         UG    100    0        0 enp1s0
+10.42.0.0       0.0.0.0         255.255.255.0   U     0      0        0 ovn-k8s-mp0
+10.42.0.0       10.42.0.1       255.255.0.0     UG    0      0        0 ovn-k8s-mp0
+10.43.0.0       169.254.169.4   255.255.0.0     UG    0      0        0 br-ex
+169.254.169.0   0.0.0.0         255.255.255.248 U     0      0        0 br-ex
+169.254.169.1   0.0.0.0         255.255.255.255 UH    0      0        0 br-ex
+169.254.169.3   10.42.0.1       255.255.255.255 UGH   0      0        0 ovn-k8s-mp0
+172.25.250.0    0.0.0.0         255.255.255.0   U     100    0        0 enp1s0
+--
+
+.. Finally, check that you can create new pods.
++
+[source,subs="verbatim,quotes"]
+--
+$ *oc --kubeconfig ~/local-admin run shell -it --restart Never --image registry.lab.example.com:8443/ubi9/ubi -- rpm -q redhat-release*
+redhat-release-9.5-0.6.el9.x86_64
+$ *oc --kubeconfig ~/local-admin delete pod shell*
+pod "shell" deleted
+--
+
+You now have a fully functional deployment of MicroShift in a RHEL machine. If you find that any of the MicroShift pods failed to start, the most likely cause is an error in your registry mirror and image policy configurations.
+
+IMPORTANT: The way we configured MicroShift, it does _not_ contain a pull secret to download container images from Red Hat, even if it has access to the Internet. It can only pull containers from a mirror registry, which is usually what organizations with stricty security policies demand.
 
 == Next Steps
 
