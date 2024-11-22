@@ -138,7 +138,7 @@ token
 [source,subs="verbatim,quotes"]
 --
 $ unset KUBECONFIG
-$ sudo cp /var/lib/microshift/resources/kubeadmin/rhelvm4/kubeconfig ~/remote-admin
+$ sudo cp /var/lib/microshift/resources/kubeadmin/serverb/kubeconfig ~/remote-admin
 $ sudo chown student:student ~/remote-admin
 $ chmod a-w ~/remote-admin
 $ cp remote-admin remote-user
@@ -155,18 +155,39 @@ openshift-service-ca.crt   1      107m
 test1                      1      92m
 --
 
-5. As an unprivileged user, create Kubernetes resources on the namespace.
+5. Grant the unprivileged user rights to impersonate a cluster-admin
++
+[ Cannot use system: users, so must reference an unexistant "admin" user ]
++
+[source,subs="verbatim,quotes"]
+--
+$ oc --kubeconfig ~/local-admin whoami
+system:admin
+$ oc --kubeconfig ~/local-admin create clusterrolebinding cluster-admin-user --clusterrole cluster-admin --user admin
+clusterrolebinding.rbac.authorization.k8s.io/cluster-admin-user created
+$ oc --kubeconfig ~/local-admin create clusterrole sudo-admin --resource users --resource-name admin --verb impersonate
+clusterrole.rbac.authorization.k8s.io/sudo-admin created
+$ oc --kubeconfig ~/local-admin create clusterrolebinding sudo-user --clusterrole sudo-admin --serviceaccount user:user
+clusterrolebinding.rbac.authorization.k8s.io/sudo-user created
+$ oc --kubeconfig ~/remote-user whoami
+system:serviceaccount:user:user
+$ oc --kubeconfig ~/remote-user get nodes
+Error from server (Forbidden): nodes is forbidden: User "system:serviceaccount:user:user" cannot list resource "nodes" in API group "" at the cluster scope
+$ oc --kubeconfig ~/remote-user --as admin get nodes
+NAME      STATUS   ROLES                         AGE   VERSION
+serverb   Ready    control-plane,master,worker   25h   v1.30.5
+--
 
 6. Allow remote access to MicroShift on the system firewall and Test a kubeconfig file for remote access as cluster administrator.
 +
 [source,subs="verbatim,quotes"]
 --
-$ sudo cp /var/lib/microshift/resources/kubeadmin/rhelvm4/kubeconfig ~/remote-admin
+$ sudo cp /var/lib/microshift/resources/kubeadmin/serverb/kubeconfig ~/remote-admin
 $ sudo chown student:student ~/remote-admin
 $ chmod a-w ~/remote-admin
 $ oc --kubeconfig ~/remote-admin get node
 NAME      STATUS   ROLES                         AGE   VERSION
-rhelvm4   Ready    control-plane,master,worker   23h   v1.30.5
+serverb   Ready    control-plane,master,worker   23h   v1.30.5
 $ sudo firewall-cmd --permanent --zone=public --add-port=6443/tcp
 success
 $ sudo firewall-cmd --reload
@@ -177,11 +198,11 @@ success
 +
 [source,subs="verbatim,quotes"]
 --
-$ scp rhelvm:~/remote-admin .
+$ scp serverb:~/remote-admin .
 $ chmod a-w ~/remote-admin
 [student@workstation ~]$ oc --kubeconfig ~/remote-admin get node
 NAME      STATUS   ROLES                         AGE   VERSION
-rhelvm4   Ready    control-plane,master,worker   24h   v1.30.5
+serverb   Ready    control-plane,master,worker   24h   v1.30.5
 [student@workstation ~]$ oc --kubeconfig ~/remote-user get configmap
 NAME                       DATA   AGE
 kube-root-ca.crt           1      115m
@@ -192,6 +213,9 @@ NAME                       DATA   AGE
 kube-root-ca.crt           1      99m
 openshift-service-ca.crt   1      99m
 test2                      1      98m
+$ oc --kubeconfig ~/remote-user --as admin get node
+NAME      STATUS   ROLES                         AGE   VERSION
+serverb   Ready    control-plane,master,worker   25h   v1.30.5
 --
 
 You now have [ SOMETHING ] or did [ SOMETHING ]
