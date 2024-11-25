@@ -1,0 +1,154 @@
+:time_estimate: 5
+
+= Lab: Deploy Kubernetes Applications in MicroShift
+
+_Estimated reading time: *{time_estimate} minutes*._
+
+Objective::
+
+Deploy Simple Containers and Multi-Container Applications in MicroShift From a Remote Client.
+
+WARNING: Work In Progress
+
+== Before you Begin
+
+You need a _test machine_ where you installed, configured, and verified MicroShift, by following the instructions from the xref:s2-install-lab.adoc[first lab] of this chapter.
+
+You also need a _development machine_ from which you will access the MicroShift instance on your _test machine_, and that was configured with a kubeconfig file from the xref:s2-install-lab.adoc[previous lab], for access to a pre-provisioned namespaces MicroShift
+
+Finally, you also need a _mirror registry_ machine, already configured with a mirror registry for Red Hat OpenShift and pre-populared with container images required by MicroShift and course activities. Make sure that your _mirror registry machine_ machine was configured and verified by following the instructions from the xref:ch1-microshift:s3-prepare-lab.adoc[first lab] of this course.
+
+These instructions were tested on RHEL 9.4 [tentative!] but should work with minimal or no change on newer and older RHEL 9.x releases.
+
+If you are using the course classroom, you will log in on the `workstation` VM, which is your _development machine_, as the user `student` with password `student`. If not, please adapt the instructions to your test environment.
+
+You will perform all steps in this lab on your _develpment machine_.
+
+== Instructions
+
+1. Log in on your _development machine_ and verify that MicroShift is up and running.
+
+.. Check that you have a kubeconfig file for an unprivileged service account.
++
+[source,subs="verbatim,quotes"]
+--
+$ *export KUBECONFIG=~/remote-user*
+$ *oc whoami*
+system:serviceaccount:user:user
+$ *oc project*
+Using project "user" from context named "microshift" on server "https://serverb.lab.example.com:6443".
+--
++
+NOTE: Other `oc` commands related to projects do not work with MicroShift.
+
+.. Check that the MicroShift service is active, using impersonation to get cluster administration rights.
++
+[source,subs="verbatim,quotes"]
+--
+$ *oc --as admin get node*
+NAME      STATUS   ROLES                         AGE     VERSION
+serverb   Ready    control-plane,master,worker   3d21h   v1.30.5
+--
+
+2. Lorem ipsum
++
+[ mysql database, imperative to test PVC]
++
+[source,subs="verbatim,quotes"]
+--
+$ oc create deployment db  --replicas 0 --image registry.lab.example.com:8443/rhel9/mysql-80
+deployment.apps/db created
+$ oc set env deployment/db MYSQL_DATABASE=test MYSQL_USER=user MYSQL_PASSWORD=redhat123
+deployment.apps/db updated
+$ oc set volumes deployment/db --add --name data --claim-name dbdata --claim-size 1G --claim-mode rwo --mount-path /var/lib/mysql/data
+deployment.apps/db volume updated
+$ oc scale deployment/db --replicas 1
+--
++
+[source,subs="verbatim,quotes"]
+--
+[student@workstation ~]$ oc get pvc
+NAME     STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS          VOLUMEATTRIBUTESCLASS   AGE
+dbdata   Bound    pvc-4091fb84-3804-4ca6-8c83-032235361db9   976564Ki   RWO            topolvm-provisioner   <unset>                 57s
+[student@workstation ~]$ oc get deployment
+NAME   READY   UP-TO-DATE   AVAILABLE   AGE
+db     0/1     1            0           4m22s
+[student@workstation ~]$ oc get deployment
+NAME   READY   UP-TO-DATE   AVAILABLE   AGE
+db     1/1     1            1           45s
+[student@workstation ~]$ oc get pod
+NAME                  READY   STATUS    RESTARTS   AGE
+db-55c5557878-6scc8   1/1     Running   0          18s
+$ oc port-forward $(oc get pod -o name -l app=db) 3306:3306
+Forwarding from 127.0.0.1:3306 -> 3306
+Forwarding from [::1]:3306 -> 3306
+--
++
+Another terminal
++
+[source,subs="verbatim,quotes"]
+--
+$ sudo dnf install mysql
+...
+Complete!
+$ mysql -h127.0.0.1 -uuser -predhat123 test
+...
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql>
+mysql> create table test (id integer primary key, data varchar(200)) ;
+Query OK, 0 rows affected (0.17 sec)
+
+mysql> insert into test (1, 'one');
+ERROR 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '1, 'one')' at line 1
+mysql> insert into test values (1, 'one');
+Query OK, 1 row affected (0.02 sec)
+
+mysql> insert into test values (2, 'two');
+Query OK, 1 row affected (0.01 sec)
+
+mysql> select * from test;
++----+------+
+| id | data |
++----+------+
+|  1 | one  |
+|  2 | two  |
++----+------+
+2 rows in set (0.00 sec)
+
+mysql> exit
+Bye
+--
++
+On the _test machine_
++
+[source,subs="verbatim,quotes"]
+--
+$ export KUBECONFIG=~/local-admin
+$ PV=$( oc get pvc dbdata -n user -o jsonpath='{.spec.volumeName}' )
+$ echo $PV
+pvc-24f9b9f4-e95a-4307-9d2b-5af6230b90bc
+$ LV=$( oc --as admin get pv $PV -o jsonpath='{.spec.csi.volumeHandle}' )
+$ echo $LV
+bea16431-baad-43fc-800e-f5d9f138e430
+$ sudo lvs rhel/$LV
+  LV                                   VG   Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  bea16431-baad-43fc-800e-f5d9f138e430 rhel -wi-a----- 956.00m
++
+[source,subs="verbatim,quotes"]
+--
+$ oc delete deployment db
+deployment.apps "db" deleted
+$ oc delete pvc dbdata
+--
+
+3. Lorem ipsum
++
+[ quotes app from helm chart to test declarative (or from simple manifests?)]
+
+
+You now have [ SOMETHING ] or did [ SOMETHING ]
+
+== Next Steps
+
+Lorem ipsum
