@@ -56,7 +56,7 @@ include::1@samples:yum:example$ocp4.repo[lines=1..3]
 ...
 --
 
-.. As an additional sanity check, search for packages from the OpenShift and RHEL Fast Data Path repositories.
+.. As an additional validation, search for packages from the OpenShift and RHEL Fast Data Path repositories.
 +
 [source,subs="verbatim,quotes"]
 --
@@ -109,7 +109,7 @@ $ *sudo cp quay-rootCA.pem /etc/pki/ca-trust/source/anchors*
 $ *sudo update-ca-trust*
 --
 
-.. As a sanity check, use the pull secret to inspect container images on the mirror registry. It should work with TLS validation enabled, which is the default for all container tools.
+.. As a validation, use the pull secret to inspect container images on the mirror registry. It should work with TLS validation enabled, which is the default for all container tools.
 +
 [source,subs="verbatim,quotes"]
 --
@@ -351,7 +351,7 @@ openshift-storage      	lvms-operator-7f544467bc-cqf2n         	1/1 	Running   0
 openshift-storage      	vg-manager-tjrs2                       	1/1 	Running   0           	5m25s
 --
 
-.. As an additional sanity check, verify that your Kubernetes cluster contains one node which takes the roles of both control plane and worker node.
+.. As an additional validation, verify that your Kubernetes cluster contains one node which takes the roles of both control plane and worker node.
 +
 [source,subs="verbatim,quotes"]
 --
