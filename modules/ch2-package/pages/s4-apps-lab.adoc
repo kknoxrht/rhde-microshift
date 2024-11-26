@@ -135,7 +135,7 @@ mysql> *exit*
 Bye
 --
 
-.. Return to the first terminal, running the `oc port-forward` command, and terminate the networkl tunnel with kbd:[Ctrl+C].
+.. Return to the first terminal, running the `oc port-forward` command, and terminate the network tunnel with kbd:[Ctrl+C].
 
 3. Switch to your _test machine_ and verify that MicroShift created a new logical volume to store data from the PVC.
 +
@@ -217,7 +217,7 @@ NAME       HOST                             ADMITTED   SERVICE    TLS
 hello      hello-user.apps.example.com      True       hello   
 --
 
-.. Edit the `/etc/hosts` file to map the host name of the route to the IP address of your _test machine_ by appending the following line:
+.. Edit your `/etc/hosts` file to map the host name of the route to the IP address of your _test machine_ by appending the following line:
 +
 [source,subs="verbatim,quotes"]
 --
@@ -254,11 +254,11 @@ service "hello" deleted
 +
 [source,subs="verbatim,quotes"]
 --
-$ *oc expose deployment/hellophp --port 8080 --type LoadBalancer*
-service/hellophp exposed
-$ oc get service
+$ *oc expose deployment/hello --port 8080 --type LoadBalancer*
+service/hello exposed
+$ *oc get service*
 NAME       TYPE           CLUSTER-IP      EXTERNAL-IP       PORT(S)          AGE
-hellophp   LoadBalancer   10.43.189.145   172.25.250.11     8080:31736/TCP   28s
+hello      LoadBalancer   10.43.189.145   172.25.250.11     8080:31736/TCP   28s
 --
 +
 NOTE: The `oc expose` command configures load balance services with a node port, which is unecessary, but makes the same service accept connections on _two_ different ports of the machine running MicroShift. Switching to the `oc create service loadbalancer` command makes no difference, it also configures a node port.
@@ -279,13 +279,13 @@ Hello, world!
 +
 [source,subs="verbatim,quotes"]
 --
-$ *oc patch service hellophp --type json --patch '[{"op": "replace", "path": "/spec/allocateLoadBalancerNodePorts", "value": false }]'*
-service/hellophp patched
-$ *oc patch service hellophp --type json --patch '[{"op": "remove", "path": "/spec/ports/0/nodePort"}]'
-service/hellophp patched*
+$ *oc patch service hello --type json --patch '[{"op": "replace", "path": "/spec/allocateLoadBalancerNodePorts", "value": false }]'*
+service/hello patched
+$ *oc patch service hello --type json --patch '[{"op": "remove", "path": "/spec/ports/0/nodePort"}]'
+service/hello patched*
 $ *oc get service*
 NAME       TYPE           CLUSTER-IP    EXTERNAL-IP       PORT(S)    AGE
-hellophp   LoadBalancer   10.43.25.48   192.168.122.192   8080/TCP   13m
+hello      LoadBalancer   10.43.25.48   172.25.250.11     8080/TCP   13m
 --
 +
 Alternatively, you could use the `oc edit` command to make these changes, or create the load balancer service from YAML manifests instead of using imperative commands.
@@ -300,11 +300,13 @@ $ *oc delete pvc dbdata*
 persistentvolumeclaim "dbdata" deleted
 $ *oc --as admin get pv*
 No resources found
-$ *oc delete deployment hello*
-deployment.apps "hello" deleted
 $ *oc delete service hello*
 service "hello" deleted.
+$ *oc delete deployment hello*
+deployment.apps "hello" deleted
 --
++
+You can also undo the edits to your `/etc/hosts` file.
 
 [ didn't need firewall updates on the test machine to use ingress or load balancer. shouldn't it? because it's on a trusted network on workstation, and it would fail from serverb? ]
 
