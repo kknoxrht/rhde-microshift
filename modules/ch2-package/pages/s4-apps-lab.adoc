@@ -310,6 +310,9 @@ You can also undo the edits to your `/etc/hosts` file.
 
 [ didn't need firewall updates on the test machine to use ingress or load balancer. shouldn't it? because it's on a trusted network on workstation, and it would fail from serverb? ]
 
+[ looks like MicroShift automatically adds firewall rules for ingress, load balancers, and node ports 
+https://docs.redhat.com/en/documentation/red_hat_build_of_microshift/4.17/html/networking/microshift-using-a-firewall#microshift-firewall-update-for-service_microshift-firewall ]
+
 With these two test deployments, you verified that your MicroShift instance can provide persistent storage and ingress network connectivity to its applications.
 
 == Next Steps
@@ -317,4 +320,5 @@ With these two test deployments, you verified that your MicroShift instance can 
 The next chapter applies all that you learned in this chapter to a RHEL for Edge image, which you can use to provision pre-configured MicroShift instances.
 
 // Review above if we end up creating the tentative lab about optional components. I cannot see the gitops package on my repos, wasn't it supposed to be available for MicroShift 4.17? I'm not sure I want to use Multus as a test scenario, nor the work of adding the OLM, an operator catalog, and a sample operator to the classroom environment.
+// microshift gitops packages are in a different repo than microshift: https://docs.redhat.com/en/documentation/red_hat_build_of_microshift/4.17/html/installing_optional_rpm_packages/microshift-install-optional-rpms#microshift-installing-rpms-for-gitops_microshift-install-optional-rpm
 
