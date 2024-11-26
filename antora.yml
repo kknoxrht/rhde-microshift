@@ -1,6 +1,9 @@
 name: rhde-microshift
 title: Deploying MicroShift on Red Hat Device Edge
 version: 1
+asciidoc:
+  attributes:
+    experimental: true
 nav:
 - modules/ROOT/nav.adoc
 - modules/ch1-microshift/nav.adoc

@@ -22,13 +22,13 @@ These instructions were tested on RHEL 9.4 [tentative!] but should work with min
 
 If you are using the course classroom, you will log in on the `workstation` VM, which is your _development machine_, as the user `student` with password `student`. If not, please adapt the instructions to your test environment.
 
-You will perform all steps in this lab on your _develpment machine_.
+You will perform most steps in this lab on your _develpment machine_.
 
 == Instructions
 
 1. Log in on your _development machine_ and verify that MicroShift is up and running.
 
-.. Check that you have a kubeconfig file for an unprivileged service account.
+.. Check that you have a kubeconfig file for an unprivileged service account and a pre-provisioned namespace.
 +
 [source,subs="verbatim,quotes"]
 --
@@ -39,7 +39,7 @@ $ *oc project*
 Using project "user" from context named "microshift" on server "https://serverb.lab.example.com:6443".
 --
 +
-NOTE: Other `oc` commands related to projects do not work with MicroShift.
+NOTE: Other `oc` commands related to projects do _not_ work with MicroShift.
 
 .. Check that the MicroShift service is active, using impersonation to get cluster administration rights.
 +
@@ -50,62 +50,79 @@ NAME      STATUS   ROLES                         AGE     VERSION
 serverb   Ready    control-plane,master,worker   3d21h   v1.30.5
 --
 
-2. Lorem ipsum
-+
-[ mysql database, imperative to test PVC]
+2. Deploy a MySQL database with persistent storage, to verify that your MicroShift instance can provide dynamic storage for applications.
+
+.. Create a deployment and configure it with environment variables required my the MySQL image from Red Hat.
 +
 [source,subs="verbatim,quotes"]
 --
-$ oc create deployment db  --replicas 0 --image registry.lab.example.com:8443/rhel9/mysql-80
+$ *oc create deployment db  --replicas 0 --image registry.lab.example.com:8443/rhel9/mysql-80*
 deployment.apps/db created
-$ oc set env deployment/db MYSQL_DATABASE=test MYSQL_USER=user MYSQL_PASSWORD=redhat123
+$ *oc set env deployment/db MYSQL_DATABASE=test MYSQL_USER=user MYSQL_PASSWORD=redhat123*
 deployment.apps/db updated
-$ oc set volumes deployment/db --add --name data --claim-name dbdata --claim-size 1G --claim-mode rwo --mount-path /var/lib/mysql/data
-deployment.apps/db volume updated
-$ oc scale deployment/db --replicas 1
 --
++
+NOTE: If you replace the registry name with `registry.redhat.io` it would work with an instance of MicroShift connected to the Internet.
+
+.. Configure the deployment with a PVC and scale the deployment to create a database server pod.
 +
 [source,subs="verbatim,quotes"]
 --
-[student@workstation ~]$ oc get pvc
+$ *oc set volumes deployment/db --add --name data --claim-name dbdata --claim-size 1G --claim-mode rwo --mount-path /var/lib/mysql/data*
+deployment.apps/db volume updated
+$ *oc scale deployment/db --replicas 1*
+deployment.apps/db scaled
+--
+
+.. Check that your namespace contains a PVC and wait until the database pod is ready and running.
++
+[source,subs="verbatim,quotes"]
+--
+$ *oc get pvc*
 NAME     STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS          VOLUMEATTRIBUTESCLASS   AGE
 dbdata   Bound    pvc-4091fb84-3804-4ca6-8c83-032235361db9   976564Ki   RWO            topolvm-provisioner   <unset>                 57s
-[student@workstation ~]$ oc get deployment
+$ *oc get deployment*
 NAME   READY   UP-TO-DATE   AVAILABLE   AGE
 db     0/1     1            0           4m22s
-[student@workstation ~]$ oc get deployment
+$ *oc get deployment*
 NAME   READY   UP-TO-DATE   AVAILABLE   AGE
 db     1/1     1            1           45s
-[student@workstation ~]$ oc get pod
+$ *oc get pod*
 NAME                  READY   STATUS    RESTARTS   AGE
 db-55c5557878-6scc8   1/1     Running   0          18s
-$ oc port-forward $(oc get pod -o name -l app=db) 3306:3306
+--
+
+.. Create a network tunnel from your _development machine_ to the database pod. Leave this command running as you move to the next step.
++
+[source,subs="verbatim,quotes"]
+--
+$ *oc port-forward $(oc get pod -o name -l app=db) 3306:3306*
 Forwarding from 127.0.0.1:3306 -> 3306
 Forwarding from [::1]:3306 -> 3306
 --
-+
-Another terminal
+
+.. Open another terminal and use it to connect to the database pod using the MySQL client included in RHEL.
 +
 [source,subs="verbatim,quotes"]
 --
-$ sudo dnf install mysql
+$ *sudo dnf install mysql*
 ...
 Complete!
-$ mysql -h127.0.0.1 -uuser -predhat123 test
+$ *mysql -h127.0.0.1 -uuser -predhat123 test*
 ...
 Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
 
 mysql>
-mysql> create table test (id integer primary key, data varchar(200)) ;
+mysql> *create table test (id integer primary key, data varchar(200)) ;*
 Query OK, 0 rows affected (0.17 sec)
 
-mysql> insert into test values (1, 'one');
+mysql> *insert into test values (1, 'one');*
 Query OK, 1 row affected (0.02 sec)
 
-mysql> insert into test values (2, 'two');
+mysql> *insert into test values (2, 'two');*
 Query OK, 1 row affected (0.01 sec)
 
-mysql> select * from test;
+mysql> *select * from test;*
 +----+------+
 | id | data |
 +----+------+
@@ -114,114 +131,143 @@ mysql> select * from test;
 +----+------+
 2 rows in set (0.00 sec)
 
-mysql> exit
+mysql> *exit*
 Bye
 --
-+
-On the _test machine_
+
+.. Return to the first terminal, running the `oc port-forward` command, and terminate the networkl tunnel with kbd:[Ctrl+C].
+
+3. Switch to your _test machine_ and verify that MicroShift created a new logical volume to store data from the PVC.
 +
 [source,subs="verbatim,quotes"]
 --
-$ export KUBECONFIG=~/local-admin
-$ PV=$( oc get pvc dbdata -n user -o jsonpath='{.spec.volumeName}' )
-$ echo $PV
+$ *export KUBECONFIG=~/local-admin*
+$ *PV=$( oc get pvc dbdata -n user -o jsonpath='{.spec.volumeName}' )*
+$ *echo $PV*
 pvc-24f9b9f4-e95a-4307-9d2b-5af6230b90bc
-$ LV=$( oc --as admin get pv $PV -o jsonpath='{.spec.csi.volumeHandle}' )
-$ echo $LV
+$ *oc get pv $PV
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM         STORAGECLASS          VOLUMEATTRIBUTESCLASS   REASON   AGE
+pvc-24f9b9f4-e95a-4307-9d2b-5af6230b90bc   976564Ki   RWO            Delete           Bound    user/dbdata   topolvm-provisioner   <unset>                          19s
+$ *LV=$( oc --as admin get pv $PV -o jsonpath='{.spec.csi.volumeHandle}' )*
+$ *echo $LV*
 bea16431-baad-43fc-800e-f5d9f138e430
-$ sudo lvs rhel/$LV
+$ *sudo lvs rhel/$LV*
   LV                                   VG   Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
   bea16431-baad-43fc-800e-f5d9f138e430 rhel -wi-a----- 956.00m
+--
+
+4. As you are already on your _test machine_, configure its firewall allow network connections to selected ports, to prepare for the next test deployment.
+
+.. Configure the system firewall allow connections to the standard HTTP port and to TCP port 8080.
 +
 [source,subs="verbatim,quotes"]
 --
-$ oc delete deployment db
-deployment.apps "db" deleted
-$ oc delete pvc dbdata
-persistentvolumeclaim "dbdata" deleted
-$ oc --as admin get pv
-No resources found
+$ *sudo firewall-cmd --permanent --zone=public --add-port=80/tcp*
+success
+$ *sudo firewall-cmd --permanent --zone=public --add-port=8080/tcp*
+success
+$ *sudo firewall-cmd --reload*
+success
 --
 
-
-3. Lorem ipsum
-+
-[ Show an LB service with the mysql pod? Seems very easy: https://github.com/openshift/microshift/blob/main/docs/user/howto_load_balancer.md]
-
-4. Lorem ipsum
+.. Check that port 8080 is not used by any of the RHEL services running on the _test machine_, especially MicroShift.
 +
 [source,subs="verbatim,quotes"]
 --
-[student@workstation ~]$ oc create deployment hellophp --image quay.io/flozanorht/php-ubi:9
-deployment.apps/hellophp created
-[student@workstation ~]$ oc get deployment.pod
-error: the server doesn't have a resource type "deployment"
-[student@workstation ~]$ oc get deployment,pod
-NAME                       READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/hellophp   1/1     1            1           37s
+$ *sudo ss -tulnp*
+Netid      State       Recv-Q      Send-Q             Local Address:Port              Peer Address:Port      Process                                          
+udp        UNCONN      0           0                        0.0.0.0:49989                  0.0.0.0:*          users:(("avahi-daemon",pid=728,fd=14))          
+udp        UNCONN      0           0                        0.0.0.0:5353                   0.0.0.0:*          users:(("microshift",pid=1880,fd=89))
+...
+--
 
-NAME                            READY   STATUS    RESTARTS   AGE
-pod/hellophp-7fd66dd674-2bnjc   1/1     Running   0          37s
-[student@workstation ~]$ 
-[student@workstation ~]$ oc logs pod/hellophp-7fd66dd674-2bnjc
-[26-Nov-2024 15:51:47] NOTICE: [pool www] 'user' directive is ignored when FPM is not running as root
-[26-Nov-2024 15:51:47] NOTICE: [pool www] 'group' directive is ignored when FPM is not running as root
-AH00558: httpd: Could not reliably determine the server's fully qualified domain name, using 10.42.0.11. Set the 'ServerName' directive globally to suppress this message
---
+5. Switch to your _development machine_ and deploy a hello world web application, to verify that you can expose applications in MicroShift for external access using OpenShift routes.
+
+.. Create a deployment for the hello word application and wait until its pod is ready and running.
 +
 [source,subs="verbatim,quotes"]
 --
-[student@workstation ~]$ oc port-forward 8080:8080 pod/hellophp-7fd66dd674-2bnjc
-Error from server (NotFound): pods "8080:8080" not found
-[student@workstation ~]$ oc port-forward -p 8080:8080 pod/hellophp-7fd66dd674-2bnjc
-error: unknown shorthand flag: 'p' in -p
-See 'oc port-forward --help' for usage.
-[student@workstation ~]$ oc port-forward pod/hellophp-7fd66dd674-2bnjc 8080:8080
-Forwarding from 127.0.0.1:8080 -> 8080
-Forwarding from [::1]:8080 -> 8080
-Handling connection for 8080
-^C[student@workstation ~]$ 
-[student@workstation ~]$ oc expose deployment/hellophp
-error: couldn't find port via --port flag or introspection
-[student@workstation ~]$ oc expose deployment/hellophp --port 8080
-service/hellophp exposed
+$ *oc create deployment hellop --image quay.io/flozanorht/php-ubi:9*
+deployment.apps/hellop created
+$ *oc get deployment,pod*
+NAME                    READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/hello   1/1     1            1           37s
+
+NAME                         READY   STATUS    RESTARTS   AGE
+pod/hello-7fd66dd674-2bnjc   1/1     Running   0          37s
 --
++
+NOTE: If you replace the registry name with `quay.io` it would work with an instance of MicroShift connected to the Internet.
+
+.. Create a service and an OpenShift route to expose the hello world application to external access. Notice that, with MicroShift, unprivileged users _cannot_ manage routes.
 +
 [source,subs="verbatim,quotes"]
 --
-[student@workstation ~]$ oc get service
+$ *oc expose deployment/hello --port 8080*
+service/hello exposed
+$ *oc get service*
 NAME       TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
 hellophp   ClusterIP   10.43.136.146   <none>        8080/TCP   10s
-[student@workstation ~]$ oc expose service hellophp
+$ *oc expose service hello*
 Error from server (Forbidden): routes.route.openshift.io is forbidden: User "system:serviceaccount:user:user" cannot create resource "routes" in API group "route.openshift.io" in the namespace "user"
-[student@workstation ~]$ 
-[student@workstation ~]$ 
-[student@workstation ~]$ oc --as admin expose service hellophp
-route.route.openshift.io/hellophp exposed
-[student@workstation ~]$ oc get route
-Error from server (Forbidden): routes.route.openshift.io is forbidden: User "system:serviceaccount:user:user" cannot list resource "routes" in API group "route.openshift.io" in the namespace "user"
-[student@workstation ~]$ oc --as admin get route
+$ *oc --as admin expose service hello*
+route.route.openshift.io/hello exposed
+$ *oc --as admin get route*
 NAME       HOST                             ADMITTED   SERVICE    TLS
-hellophp   hellophp-user.apps.example.com   True       hellophp   
-[student@workstation ~]$ 
-[student@workstation ~]$ sudo vi /etc/hosts
-[sudo] password for student: 
-[student@workstation ~]$ curl http://hellophp-user.apps.example.com 
+hello      hello-user.apps.example.com      True       hello   
+--
+
+.. Edit the `/etc/hosts` file to map the host name of the route to the IP address of your _test machine_ by appending the following line:
++
+[source,subs="verbatim,quotes"]
+--
+172.25.250.11 hello-user.apps.example.com
+--
++
+NOTE: In a real-world scenario you would configure a DNS server to resolve any hostname within the applications domain of your MicroShift instance to its IP address.
+
+.. Check that your _test machine_ can access the hello world application using the host name assigned to it by MicroShift.
++
+[source,subs="verbatim,quotes"]
+--
+$ *curl http://hello-user.apps.example.com*
 <html>
 <body>
 Hello, world!
 </body>
 </html>
 --
+
+.. Delete the route and service to prepare for the next step.
 +
 [source,subs="verbatim,quotes"]
 --
-$ oc expose deployment/hellophp --port 8080 --type LoadBalancer
+$ *oc --as admin delete route hello*
+route.route.openshift.io "hello" deleted
+$ *oc delete service hello*
+service "hello" deleted
+--
+
+6. Create a load balancer service to expose the hello world application without using an HTTP proxy.
+
+.. Create a service of type load balancer and get its external IP address. That address should match the IP address of your _test machine_. You could choose any TCP port that is free on your _test machine_, but for simplicity we pick the same TCP port the hellp world applications uses inside its container.
++
+[source,subs="verbatim,quotes"]
+--
+$ *oc expose deployment/hellophp --port 8080 --type LoadBalancer*
 service/hellophp exposed
 $ oc get service
 NAME       TYPE           CLUSTER-IP      EXTERNAL-IP       PORT(S)          AGE
 hellophp   LoadBalancer   10.43.189.145   172.25.250.11     8080:31736/TCP   28s
-$ curl http://serverb:8080
+--
++
+NOTE: The `oc expose` command configures load balance services with a node port, which is unecessary, but makes the same service accept connections on _two_ different ports of the machine running MicroShift. Switching to the `oc create service loadbalancer` command makes no difference, it also configures a node port.
+
+.. Check that you can access the hello word application using the load balancer IP address and port.
++
+[source,subs="verbatim,quotes"]
+--
+$ *curl http://serverb.labs.example.com:8080*
 <html>
 <body>
 Hello, world!
@@ -229,8 +275,44 @@ Hello, world!
 </html>
 --
 
-You now have [ SOMETHING ] or did [ SOMETHING ]
+.. If you would prefer to get rid of the node port, you can perform the following commands to patch the service resource.
++
+[source,subs="verbatim,quotes"]
+--
+$ *oc patch service hellophp --type json --patch '[{"op": "replace", "path": "/spec/allocateLoadBalancerNodePorts", "value": false }]'*
+service/hellophp patched
+$ *oc patch service hellophp --type json --patch '[{"op": "remove", "path": "/spec/ports/0/nodePort"}]'
+service/hellophp patched*
+$ *oc get service*
+NAME       TYPE           CLUSTER-IP    EXTERNAL-IP       PORT(S)    AGE
+hellophp   LoadBalancer   10.43.25.48   192.168.122.192   8080/TCP   13m
+--
++
+Alternatively, you could use the `oc edit` command to make these changes, or create the load balancer service from YAML manifests instead of using imperative commands.
+
+7. Delete the database deployment and its PVC, and also the hello world deployment and its service. Notice that deleting a PVC also deletes its persistent volume.
++
+[source,subs="verbatim,quotes"]
+--
+$ *oc delete deployment db*
+deployment.apps "db" deleted
+$ *oc delete pvc dbdata*
+persistentvolumeclaim "dbdata" deleted
+$ *oc --as admin get pv*
+No resources found
+$ *oc delete deployment hello*
+deployment.apps "hello" deleted
+$ *oc delete service hello*
+service "hello" deleted.
+--
+
+[ didn't need firewall updates on the test machine to use ingress or load balancer. shouldn't it? because it's on a trusted network on workstation, and it would fail from serverb? ]
+
+With these two test deployments, you verified that your MicroShift instance can provide persistent storage and ingress network connectivity to its applications.
 
 == Next Steps
 
-Lorem ipsum
+The next chapter applies all that you learned in this chapter to a RHEL for Edge image, which you can use to provision pre-configured MicroShift instances.
+
+// Review above if we end up creating the tentative lab about optional components. I cannot see the gitops package on my repos, wasn't it supposed to be available for MicroShift 4.17? I'm not sure I want to use Multus as a test scenario, nor the work of adding the OLM, an operator catalog, and a sample operator to the classroom environment.
+
