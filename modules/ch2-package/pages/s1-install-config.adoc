@@ -1,4 +1,4 @@
-:time_estimate: 5
+:time_estimate: 9
 
 = Install and Configure MicroShift on Package-Based RHEL
 

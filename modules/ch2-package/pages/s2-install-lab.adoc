@@ -1,4 +1,4 @@
-:time_estimate: 5
+:time_estimate: 13
 
 = Lab: Install MicroShift from RPM Packages
 
