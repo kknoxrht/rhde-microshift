@@ -18,6 +18,8 @@ Red Hat Device Edge is a software and support subscription that bundles three co
 . Red Hat build of MicroShift.
 . Red Hat Ansible Automation Platform.
 
+// Copy of the diagram from ch1-s1-fig-1 of rhde-build
+
 image::s1-devices-fig-1.svg[title="Components of Red Hat Device Edge"]
 
 All of these three components can be purchased as part of a number of other subscriptions from Red Hat. For example, RHEL and Ansible are frequently purchased as their own subscriptions, instead of as part of a bundle, and MicroShift is also available as part of the Red Hat OpenShift Container Platform and Red Hat OpenShift Plus.
