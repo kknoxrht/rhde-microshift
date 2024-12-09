@@ -1,7 +1,7 @@
 = Deploy MicroShift on RHEL Servers
 
 Goal::
-Install and Configure MicroShift in package-based RHEL
+Deploy and Configure MicroShift in package-based RHEL
 
 WARNING: Work In Progress
 
